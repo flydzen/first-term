@@ -14,7 +14,10 @@ big_integer::big_integer() : positive(true) {
 big_integer::big_integer(big_integer const &other) = default;
 
 big_integer::big_integer(int a) {
-    data_.push_back(std::abs(a));
+    if (a == std::numeric_limits<int>::min())
+        data_.push_back(static_cast<u32>(a));
+    else
+        data_.push_back(abs(a));
     positive = a >= 0;
 }
 
@@ -317,7 +320,7 @@ std::string to_string(big_integer const &a) {
         res.insert(res.end(), 9 - ad.size(), '0');
         temp /= 1000000000;
     }
-    for (; res.back() == '0' && res.size() > 1; res.pop_back());
+    for (; res.size() > 1 && res.back() == '0'; res.pop_back());
     if (neg)
         res += "-";
     std::reverse(res.begin(), res.end());
@@ -425,14 +428,14 @@ pair<big_integer, big_integer> big_integer::divM_N(big_integer &v, big_integer c
     while (k != 0) {
         k--;
         dk = d << (int) (k * BASE);
-        if (v.data_.back() == d.data_.back() && v.data_[v.data_.size() - 2] == d.data_[d.data_.size() - 2]) {
+        if (v.get(-1) == d.get(-1) && v.get(-2) == d.get(- 2)) {
             res.push_back(0xFFFFFFFF);
         } else {
-            auto p = div3_2_primal(v.data_.back(),
-                                   v.data_[v.data_.size() - 2],
-                                   v.data_[v.data_.size() - 3],
-                                   d.data_.back(),
-                                   d.data_[d.data_.size() - 2]);
+            auto p = div3_2_primal(v.get(-1),
+                                   v.get(-2),
+                                   v.get(-3),
+                                   d.get(-1),
+                                   d.get(-2));
             res.push_back(p.first);
         }
         big_integer temp;
@@ -495,6 +498,14 @@ pair<uint32_t, uint32_t> big_integer::div3_2_primal(uint32_t u1, uint32_t u2, ui
     u32 res = static_cast<u32>(r & MAX_DIGIT);
     u32 mod = static_cast<u32>(m & MAX_DIGIT);
     return {res, mod};
+}
+uint32_t big_integer::get(int i) {
+    if (i < 0)
+        i = data_.size() + i;
+    if (i >= data_.size())
+        return 0;
+    else
+        return data_[i];
 }
 
 std::ostream &operator<<(std::ostream &s, big_integer const &a) {
