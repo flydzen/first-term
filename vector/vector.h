@@ -58,14 +58,14 @@ struct vector {
      T *data_;
      size_t size_;
      size_t capacity_;
-     T *genCapacity(size_t);
-     void saveSetCapacity(size_t);
+     T *allocMemory(size_t);
+     void setCapacity(size_t);
      void doCopy(T *to, T const *from, size_t size);
      void clear(T *mas, size_t size);
 };
 
 template<typename T>
-T *vector<T>::genCapacity(size_t newCap) {
+T *vector<T>::allocMemory(size_t newCap) {
     if (newCap == 0)
         return nullptr;
     T *temp = static_cast<T *>(operator new(newCap * sizeof(T)));
@@ -73,10 +73,10 @@ T *vector<T>::genCapacity(size_t newCap) {
 }
 
 template<typename T>
-void vector<T>::saveSetCapacity(size_t newCap) {
-    if (size_ > newCap || capacity_ == newCap)
+void vector<T>::setCapacity(size_t newCap) {
+    if (capacity_ == newCap)
         return;
-    T *temp = genCapacity(newCap);
+    T *temp = allocMemory(newCap);
     doCopy(temp, data_, size_);
     std::swap(temp, data_);
     clear(temp, size_);
@@ -89,20 +89,21 @@ vector<T>::vector() noexcept : data_(nullptr), size_(0), capacity_(0) {}
 
 template<typename T>
 vector<T>::vector(std::size_t cap_size) :
-    data_(genCapacity(cap_size)),
+    data_(allocMemory(cap_size)),
     size_(0),
     capacity_(cap_size) {
 }
 
 template<typename T>
 void vector<T>::swap(vector &other) {
-    std::swap(data_, other.data_);
-    std::swap(size_, other.size_);
-    std::swap(capacity_, other.capacity_);
+    using std::swap;
+    swap(data_, other.data_);
+    swap(size_, other.size_);
+    swap(capacity_, other.capacity_);
 }
 template<typename T>
 vector<T>::vector(vector const &other) : vector() {
-    T* temp = genCapacity(other.size_);
+    T *temp = allocMemory(other.size_);
     doCopy(temp, other.data_, other.size_);
     std::swap(data_, temp);
     operator delete(temp);
@@ -120,7 +121,7 @@ void vector<T>::doCopy(T *to, T const *from, size_t size) {
     } catch (...) {
         clear(to, i);
         operator delete(to);
-        throw std::runtime_error("reallocation_throw");
+        throw;
     }
 }
 
@@ -143,8 +144,8 @@ vector<T>::~vector() {
 }
 template<typename T>
 void vector<T>::clear() {
-    while (size_ > 0)
-        pop_back();
+    clear(data_, size_);
+    size_ = 0;
 }
 template<typename T>
 T &vector<T>::operator[](size_t i) {
@@ -156,11 +157,11 @@ T const &vector<T>::operator[](size_t i) const {
 }
 template<typename T>
 T *vector<T>::data() {
-    return data_ ? data_ : nullptr;
+    return data_;
 }
 template<typename T>
 T const *vector<T>::data() const {
-    return data_ ? data_ : nullptr;
+    return data_;
 }
 template<typename T>
 size_t vector<T>::size() const {
@@ -192,27 +193,29 @@ size_t vector<T>::capacity() const {
 }
 template<typename T>
 void vector<T>::push_back(const T &value) {
-    T valueCopy = value;
-    if (size_ == capacity_)
-        saveSetCapacity(size_ * 2 + 1);
-    new(data_ + size_) T(valueCopy);
+    if (size_ == capacity_) {
+        T valueCopy = value;
+        setCapacity(size_ * 2 + 1);
+        new(data_ + size_) T(valueCopy);
+    } else {
+        new(data_ + size_) T(value);
+    }
     ++size_;
 }
 template<typename T>
 void vector<T>::pop_back() {
     if (empty())
-        throw std::runtime_error("delete from empty vector");
+        throw;
     data_[--size_].~T();
 }
 template<typename T>
 void vector<T>::reserve(size_t new_cap) {
-    if (capacity_ < new_cap) {
-        saveSetCapacity(new_cap);
-    }
+    if (capacity_ < new_cap)
+        setCapacity(new_cap);
 }
 template<typename T>
 void vector<T>::shrink_to_fit() {
-    saveSetCapacity(size_);
+    setCapacity(size_);
     capacity_ = size_;
 }
 template<typename T>
@@ -225,20 +228,11 @@ typename vector<T>::const_iterator vector<T>::end() const {
 }
 template<typename T>
 typename vector<T>::iterator vector<T>::insert(vector::iterator pos, const T &value) {
-    T newValue = value;
+    using std::swap;
     ptrdiff_t ind = pos - begin();
-    if (ind == size_){
-        push_back(newValue);
-        return &data_[size_-1];
-    }
-    size_t nCap = size_ == capacity_ ? capacity_ * 2 : capacity_;
-    vector temp(nCap);
-    for (size_t i = 0; i < ind; i++)
-        temp.push_back(data_[i]);
-    temp.push_back(value);
-    for (size_t i = ind; i < size_; i++)
-        temp.push_back(data_[i]);
-    swap(temp);
+    push_back(value);
+    for (size_t i = size_-1; i > ind; i--)
+        swap(data_[i], data_[i-1]);
     return &data_[ind];
 }
 template<typename T>
@@ -264,15 +258,15 @@ T const &vector<T>::front() const {
 
 template<typename T>
 typename vector<T>::iterator vector<T>::erase(vector::iterator first, vector::iterator last) {
+    using std::swap;
     ptrdiff_t bgn = first - begin();
-    ptrdiff_t nd = last - begin();
-    T* temp = genCapacity(capacity_);
-    doCopy(temp, data_, bgn);
-    doCopy(temp + bgn, data_ + nd, (size_t) (end()-last));
-    std::swap(temp, data_);
-    clear(temp, size_);
-    size_ -= nd - bgn;
-    operator delete(temp);
+    ptrdiff_t range = last-first;
+    if (range <= 0)
+        return first;
+    for (size_t i = bgn; i != size_-range; i++)
+        swap(data_[i], data_[i+range]);
+    for (size_t i = 0; i != range; i++)
+        pop_back();
     return data_ + bgn;
 }
 
