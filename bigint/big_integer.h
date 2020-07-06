@@ -57,6 +57,7 @@ struct big_integer {
      static const uint32_t MAX_DIGIT = (((uint64_t) 1) << BASE) - 1;
      static const uint64_t BASE_DIGIT = ((uint64_t) 1) << BASE;
      static pair<uint32_t, uint32_t> split64(uint64_t n);
+     uint32_t get(int i);
      void sumABS(big_integer const &b);
      void subABS(big_integer const &b);
      static void toFit(vector<uint32_t> &v);
