@@ -47,12 +47,9 @@ struct vector {
      const_iterator begin() const;
      const_iterator end() const;
 
-     iterator insert(iterator pos, T const &);
      iterator insert(const_iterator pos, T const &);
 
-     iterator erase(iterator pos);
      iterator erase(const_iterator pos);
-     iterator erase(iterator first, iterator last);
      iterator erase(const_iterator first, const_iterator last);
  private:
      T *data_;
@@ -60,8 +57,8 @@ struct vector {
      size_t capacity_;
      T *allocMemory(size_t);
      void setCapacity(size_t);
-     void doCopy(T *to, T const *from, size_t size);
-     void clear(T *mas, size_t size);
+     static void doCopy(T *to, T const *from, size_t size);
+     static void clear(T *mas, size_t size);
 };
 
 template<typename T>
@@ -78,9 +75,9 @@ void vector<T>::setCapacity(size_t newCap) {
         return;
     T *temp = allocMemory(newCap);
     doCopy(temp, data_, size_);
-    std::swap(temp, data_);
-    clear(temp, size_);
-    operator delete(temp);
+    clear(data_, size_);
+    operator delete(data_);
+    data_ = temp;
     capacity_ = newCap;
 }
 
@@ -105,8 +102,7 @@ template<typename T>
 vector<T>::vector(vector const &other) : vector() {
     T *temp = allocMemory(other.size_);
     doCopy(temp, other.data_, other.size_);
-    std::swap(data_, temp);
-    operator delete(temp);
+    data_ = temp;
     size_ = other.size_;
     capacity_ = size_;
 }
@@ -226,8 +222,9 @@ template<typename T>
 typename vector<T>::const_iterator vector<T>::end() const {
     return data_ + size_;
 }
+
 template<typename T>
-typename vector<T>::iterator vector<T>::insert(vector::iterator pos, const T &value) {
+typename vector<T>::iterator vector<T>::insert(vector::const_iterator pos, const T &value) {
     using std::swap;
     ptrdiff_t ind = pos - begin();
     push_back(value);
@@ -235,17 +232,10 @@ typename vector<T>::iterator vector<T>::insert(vector::iterator pos, const T &va
         swap(data_[i], data_[i-1]);
     return &data_[ind];
 }
-template<typename T>
-typename vector<T>::iterator vector<T>::insert(vector::const_iterator pos, const T &value) {
-    return insert(pos, value);
-}
-template<typename T>
-typename vector<T>::iterator vector<T>::erase(vector::iterator pos) {
-    return erase(pos, pos + 1);
-}
+
 template<typename T>
 typename vector<T>::iterator vector<T>::erase(vector::const_iterator pos) {
-    return erase(pos);
+    return erase(pos, pos+1);
 }
 template<typename T>
 T &vector<T>::front() {
@@ -257,22 +247,17 @@ T const &vector<T>::front() const {
 }
 
 template<typename T>
-typename vector<T>::iterator vector<T>::erase(vector::iterator first, vector::iterator last) {
+typename vector<T>::iterator vector<T>::erase(vector::const_iterator first, vector::const_iterator last) {
     using std::swap;
     ptrdiff_t bgn = first - begin();
     ptrdiff_t range = last-first;
     if (range <= 0)
-        return first;
+        return data_ + bgn;
     for (size_t i = bgn; i != size_-range; i++)
         swap(data_[i], data_[i+range]);
     for (size_t i = 0; i != range; i++)
         pop_back();
     return data_ + bgn;
-}
-
-template<typename T>
-typename vector<T>::iterator vector<T>::erase(vector::const_iterator first, vector::const_iterator last) {
-    return erase(first, last);
 }
 
 #endif // VECTOR_H
