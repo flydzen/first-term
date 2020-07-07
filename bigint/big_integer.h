@@ -10,6 +10,8 @@ using namespace std;
 
 struct big_integer {
      typedef unsigned __int128 uint128_t;
+     //typedef container cont;
+     typedef vector<u32> cont;
      big_integer();
      big_integer(big_integer const &other);
      big_integer(int a);
@@ -51,23 +53,24 @@ struct big_integer {
      friend std::string to_string(big_integer const &a);
 
  private:
-     vector<uint32_t> data_;
+     cont data_;
      bool positive;
      static const uint32_t BASE = 32;
      static const uint32_t MAX_DIGIT = (((uint64_t) 1) << BASE) - 1;
      static const uint64_t BASE_DIGIT = ((uint64_t) 1) << BASE;
      static pair<uint32_t, uint32_t> split64(uint64_t n);
-     uint32_t get(int i);
-     void sumABS(big_integer const &b);
-     void subABS(big_integer const &b);
-     static void toFit(vector<uint32_t> &v);
-     vector<uint32_t> additionTo2(vector<uint32_t> const &v, bool is2 = false) const;
-     static bool highBit(vector<uint32_t> &v);
+     //uint32_t get(int i);
+     uint32_t operator[](int i);
+     void sum_abs(big_integer const &b);
+     void sub_abs(big_integer const &b);
+     static void to_fit(cont &v);
+     cont addition_to_2(cont const &v, bool is2 = false) const;
+     static bool highBit(cont &v);
      static pair<big_integer, big_integer> div(big_integer &v, big_integer const &d);
-     static pair<big_integer, big_integer> divM_N(big_integer &v, big_integer const &d);
+     static pair<big_integer, big_integer> div_M_N(big_integer &v, big_integer const &d);
      static pair<big_integer, big_integer> div_primal(big_integer &v, big_integer const &d);
-     static pair<uint32_t, uint32_t> div3_2_primal(uint32_t u1, uint32_t u2, uint32_t u3, uint32_t d1, uint32_t d2);
-     static pair<big_integer, big_integer> divN_1(big_integer &v, big_integer const &d);
+     static pair<uint32_t, uint32_t> div_3_2_primal(uint32_t u1, uint32_t u2, uint32_t u3, uint32_t d1, uint32_t d2);
+     static pair<big_integer, big_integer> div_N_1(big_integer &v, big_integer const &d);
 };
 
 big_integer operator+(big_integer a, big_integer const &b);
