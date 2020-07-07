@@ -9,15 +9,13 @@ container::container() : is_small(true), empty(true) {
 }
 container::~container() {
     if (!is_small)
-        delete data.big;
+        data.big->del();
 }
 container::container(container const &other) : is_small(other.is_small), empty(other.empty) {
     if (is_small)
         data.small = other.data.small;
-    else {
-        data.big = new wrapper;
-        data.big->v = other.data.big->v;
-    }
+    else
+        data.big = other.data.big->add();
 }
 container::container(size_t i) : container() {
     resize(i);
@@ -33,11 +31,13 @@ void container::push_back(u32 v) {
         data.big->v.push_back(v);
         is_small = false;
     } else {
+        data.big = data.big->unshare();
         data.big->v.push_back(v);
     }
 }
 void container::pop_back() {
-    ////////////////////////////////////////////// добавь для is_small
+    // добавь для is_small
+    data.big = data.big->unshare();
     data.big->v.pop_back();
     if (data.big->v.size() == 1) {
         u32 value = data.big->v[0];
@@ -49,8 +49,10 @@ void container::pop_back() {
 u32 &container::operator[](size_t ind) {
     if (is_small)
         return data.small;
-    else
+    else {
+        data.big = data.big->unshare();
         return data.big->v[ind];
+    }
 }
 u32 const &container::operator[](size_t ind) const {
     if (is_small)
@@ -61,8 +63,10 @@ u32 const &container::operator[](size_t ind) const {
 u32 &container::back() {
     if (is_small)
         return data.small;
-    else
+    else {
+        data.big = data.big->unshare();
         return data.big->v.back();
+    }
 }
 size_t container::size() const {
     if (is_small)
@@ -84,26 +88,26 @@ void container::resize(size_t sz, u32 v) {
             if (!empty)
                 data.big->v.push_back(val);
         }
+        data.big = data.big->unshare();
         data.big->v.resize(sz, v);
         is_small = false;
     }
     empty = false;
 }
 void container::reverse() {
-    if (!is_small)
+    if (!is_small) {
+        data.big = data.big->unshare();
         std::reverse(data.big->v.begin(), data.big->v.end());
+    }
 }
 container &container::operator=(container const &other) {
     empty = other.empty;
-    if (other.is_small) {
-        if (!is_small)
-            delete data.big;
+    if (!is_small)
+        data.big->del();
+    if (other.is_small)
         data.small = other.data.small;
-    }else {
-        if (is_small)
-            data.big = new wrapper;
-        data.big->v = other.data.big->v;
-    }
+    else
+        data.big = other.data.big->add();
     is_small = other.is_small;
     return *this;
 }
