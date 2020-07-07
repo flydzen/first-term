@@ -5,13 +5,14 @@
 #include <iosfwd>
 #include <vector>
 #include <cstdint>
+//#include "container.h"
 
 using namespace std;
 
 struct big_integer {
      typedef unsigned __int128 uint128_t;
      //typedef container cont;
-     typedef vector<u32> cont;
+     typedef vector<uint32_t> cont;
      big_integer();
      big_integer(big_integer const &other);
      big_integer(int a);

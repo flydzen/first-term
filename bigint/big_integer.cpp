@@ -415,8 +415,8 @@ big_integer::cont big_integer::addition_to_2(cont const &v, bool is2) const {
     if (is2 && !high) {
         return v;
     }
-    for (unsigned int &i : temp.data_) {
-        i = ~i;
+    for (size_t i = 0; i < temp.data_.size(); i++){
+        temp.data_[i] = ~temp.data_[i];
     }
     temp++;
     return temp.data_;
