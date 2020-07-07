@@ -14,7 +14,32 @@
 
 struct wrapper{
     std::vector<u32> v;
-    //wrapper();
+    size_t count;
+    wrapper() : count(1) {    }
+    explicit wrapper(std::vector<u32>& other) : wrapper(){
+        v = other;
+    }
+    void del(){
+        count--;
+        if (count == 0)
+            delete this;
+    }
+
+    wrapper* add(){
+        count++;
+        return this;
+    }
+
+    wrapper* unshare(){
+        if (count != 1) {
+            --count;
+            auto* nw = new wrapper;
+            nw->v = v;
+            return nw;
+        } else {
+            return this;
+        }
+    }
 };
 
 union myUnion {
