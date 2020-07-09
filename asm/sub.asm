@@ -9,6 +9,8 @@ _start:
                 call            read_long
                 lea             rdi, [rsp + 128 * 8]
                 call            read_long
+                mov             rsi, rdi
+                mov             rdi, rsp 
                 call            sub_long_long
 
                 call            write_long
@@ -18,7 +20,7 @@ _start:
 
                 jmp             exit
 
-; adds two long number
+; subs two long number
 ;    rdi -- address a #1 (long number)
 ;    rsi -- address b #2 (long number)
 ;    rcx -- length of long numbers in qwords
